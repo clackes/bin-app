@@ -1,15 +1,18 @@
 {
   "expo": {
-    "name": "CestinoApp",
+    "name": "Cestino",
     "slug": "CestinoApp",
     "version": "1.0.0",
     "orientation": "portrait",
     "icon": "./assets/icon.png",
-    "userInterfaceStyle": "light",
+    "userInterfaceStyle": "dark",
+    "backgroundColor": "#0E0E10",
     "ios": {
-      "supportsTablet": true
+      "supportsTablet": false,
+      "bundleIdentifier": "com.clackes.cestino"
     },
     "android": {
+      "package": "com.clackes.cestino",
       "adaptiveIcon": {
         "backgroundColor": "#E6F4FE",
         "foregroundImage": "./assets/android-icon-foreground.png",
@@ -20,6 +23,18 @@
     },
     "web": {
       "favicon": "./assets/favicon.png"
-    }
+    },
+    "plugins": [
+      [
+        "expo-media-library",
+        {
+          "photosPermission": "Cestino deve vedere le tue foto e i tuoi video per farti scegliere cosa tenere e cosa eliminare.",
+          "savePhotosPermission": "Cestino deve poter modificare la libreria per eliminare gli elementi che scarti.",
+          "granularPermissions": ["photo", "video"]
+        }
+      ],
+      "expo-video",
+      "expo-image"
+    ]
   }
 }
