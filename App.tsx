@@ -3,6 +3,7 @@ import { StatusBar } from 'expo-status-bar';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { ActivityIndicator, Alert, Linking, Pressable, StyleSheet, Text, View } from 'react-native';
 import { SafeAreaProvider, SafeAreaView } from 'react-native-safe-area-context';
+import { DEFAULT_ORDER, OrderPicker, orderKey, orderLabel, orderQuery, type Order } from './src/OrderPicker';
 import { BackCard, SwipeCard, type Decision, type SwipeCardHandle } from './src/SwipeCard';
 import {
   clearAll,
@@ -76,6 +77,8 @@ async function countAssets(type: MediaLibrary.MediaTypeValue) {
 function Reviewer({ limited }: { limited: boolean }) {
   const [ready, setReady] = useState(false);
   const [section, setSection] = useState<Section>('photo');
+  const [orders, setOrders] = useState<Record<Section, Order>>({ photo: DEFAULT_ORDER, video: DEFAULT_ORDER });
+  const [pickerOpen, setPickerOpen] = useState(false);
   const [trash, setTrash] = useState<Asset[]>([]);
   const [totals, setTotals] = useState<Record<Section, number>>({ photo: 0, video: 0 });
   const [deleting, setDeleting] = useState(false);
@@ -243,6 +246,20 @@ function Reviewer({ limited }: { limited: boolean }) {
         })}
       </View>
 
+      <Pressable style={styles.orderChip} onPress={() => setPickerOpen(true)}>
+        <Text style={styles.orderText} numberOfLines={1}>
+          ⇅ {orderLabel(orders[section])}
+        </Text>
+      </Pressable>
+
+      <OrderPicker
+        visible={pickerOpen}
+        section={section}
+        current={orders[section]}
+        onSelect={(o) => setOrders((prev) => ({ ...prev, [section]: o }))}
+        onClose={() => setPickerOpen(false)}
+      />
+
       {limited ? (
         <Pressable onPress={() => MediaLibrary.presentPermissionsPickerAsync()}>
           <Text style={styles.banner}>
@@ -254,8 +271,9 @@ function Reviewer({ limited }: { limited: boolean }) {
 
       {ready ? (
         <Deck
-          key={`${section}-${deckKey}`}
+          key={`${section}-${orderKey(orders[section])}-${deckKey}`}
           section={section}
+          order={orders[section]}
           trashCount={trash.length}
           isReviewed={isReviewed}
           setKept={setKept}
@@ -271,6 +289,7 @@ function Reviewer({ limited }: { limited: boolean }) {
 
 type DeckProps = {
   section: Section;
+  order: Order;
   trashCount: number;
   isReviewed: (a: Asset) => boolean;
   setKept: (a: Asset, value: boolean) => void;
@@ -279,7 +298,7 @@ type DeckProps = {
 };
 
 // Coda di una sola sezione. Viene rimontata (key) quando cambi sezione.
-function Deck({ section, trashCount, isReviewed, setKept, addToTrash, removeFromTrash }: DeckProps) {
+function Deck({ section, order, trashCount, isReviewed, setKept, addToTrash, removeFromTrash }: DeckProps) {
   const [queue, setQueue] = useState<Asset[]>([]);
   const [history, setHistory] = useState<HistoryEntry[]>([]);
   const [hasMore, setHasMore] = useState(true);
@@ -303,7 +322,7 @@ function Deck({ section, trashCount, isReviewed, setKept, addToTrash, removeFrom
           first: PAGE_SIZE,
           after: cursor.current,
           mediaType,
-          sortBy: [[MediaLibrary.SortBy.creationTime, false]],
+          ...orderQuery(order),
         });
         cursor.current = page.endCursor;
         hasMoreRef.current = page.hasNextPage;
@@ -322,7 +341,7 @@ function Deck({ section, trashCount, isReviewed, setKept, addToTrash, removeFrom
       loadingRef.current = false;
       setLoading(false);
     }
-  }, [mediaType, isReviewed]);
+  }, [mediaType, order, isReviewed]);
 
   useEffect(() => {
     if (queue.length < PREFETCH_BELOW) loadMore();
@@ -356,7 +375,9 @@ function Deck({ section, trashCount, isReviewed, setKept, addToTrash, removeFrom
           <View style={styles.center}>
             <Text style={styles.title}>Finito! 🎉</Text>
             <Text style={styles.body}>
-              {`Non ci sono altri ${noun} da rivedere.`}
+              {order.kind === 'album'
+                ? `Non ci sono altri ${noun} da rivedere in "${order.title}".`
+                : `Non ci sono altri ${noun} da rivedere.`}
               {trashCount > 0 ? `\nHai ${trashCount} elementi nel cestino: tocca 🗑 in alto per eliminarli.` : ''}
             </Text>
           </View>
@@ -458,6 +479,16 @@ const styles = StyleSheet.create({
   },
   dimBg: { backgroundColor: '#3A3A3C' },
   trashText: { color: '#fff', fontSize: 16, fontWeight: '700' },
+  orderChip: {
+    alignSelf: 'center',
+    maxWidth: '90%',
+    paddingHorizontal: 14,
+    paddingVertical: 6,
+    marginBottom: 8,
+    borderRadius: 16,
+    backgroundColor: '#1C1C1E',
+  },
+  orderText: { color: '#0A84FF', fontSize: 14, fontWeight: '600' },
   banner: {
     color: '#FFD60A',
     fontSize: 13,

@@ -4,6 +4,7 @@ App personale per iPhone: decidi una foto/video alla volta cosa tenere e cosa el
 Gratis, senza App Store, senza abbonamenti, senza internet.
 
 - In alto scegli la sezione: **Foto** o **Video** (ognuna con quanti ne restano da vedere)
+- Sotto le schede, **⇅** sceglie da dove partire: più recenti, più vecchi, un album (anche quelli automatici di iOS: Screenshot, Selfie, Preferiti…) e, per i video, i più lunghi prima. Ogni sezione ricorda la sua scelta finché l'app è aperta.
 - **Swipe a destra** (o ✓) → tieni
 - **Swipe a sinistra** (o ✕) → finisce nel cestino
 - **↶** tra i due pulsanti → annulla l'ultima scelta
@@ -71,6 +72,7 @@ rm -rf ~/Library/Developer/Xcode/DerivedData
 App.tsx              schermate, coda, cestino, eliminazione
 src/SwipeCard.tsx    carta con swipe (PanResponder + Animated)
 src/MediaView.tsx    foto / video (expo-image, expo-video)
+src/OrderPicker.tsx  scelta dell'ordine (data, durata, album)
 src/storage.ts       salvataggio dei soli ID degli elementi tenuti
 app.json             nome, bundle id, testi dei permessi
 ```
@@ -86,6 +88,8 @@ npx expo lint
 ```
 
 ## Problemi comuni
+
+- **Non c'è l'ordinamento per Persone:** Apple non dà alle app accesso al riconoscimento dei volti di Foto. Alternativa: in Foto crea un album con quella persona e sceglilo con ⇅.
 
 - **Vedo solo alcune foto:** hai dato accesso limitato. Tocca il banner giallo, oppure Impostazioni → Cestino → Foto → Accesso completo.
 - **Foto su iCloud lente a comparire:** vengono scaricate al momento, serve connessione.
