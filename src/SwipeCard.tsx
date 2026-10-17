@@ -16,7 +16,7 @@ type Props = {
 };
 
 export function SwipeCard({ asset, onDecision, ref }: Props) {
-  // La carta vive per un solo elemento (key = asset.id), quindi basta l'onDecision iniziale.
+  // A card lives for a single item (key = asset.id), so the initial onDecision is enough.
   const [{ pos, flyOut, responder }] = useState(() => {
     const pos = new Animated.ValueXY();
     let done = false;
@@ -31,7 +31,7 @@ export function SwipeCard({ asset, onDecision, ref }: Props) {
       }).start(() => onDecision(d));
     };
     const responder = PanResponder.create({
-      // I tap passano ai figli (es. audio del video); lo swipe parte solo con un movimento orizzontale.
+      // Taps go to children (e.g. video sound); a swipe only starts on horizontal movement.
       onMoveShouldSetPanResponder: (_, g) => Math.abs(g.dx) > 8 && Math.abs(g.dx) > Math.abs(g.dy),
       onPanResponderMove: (_, g) => pos.setValue({ x: g.dx, y: g.dy * 0.3 }),
       onPanResponderRelease: (_, g) => {
@@ -60,16 +60,16 @@ export function SwipeCard({ asset, onDecision, ref }: Props) {
     >
       <MediaView asset={asset} active />
       <Animated.View style={[styles.stamp, styles.keepStamp, { opacity: keepOpacity }]} pointerEvents="none">
-        <Text style={[styles.stampText, { color: '#34C759' }]}>TIENI</Text>
+        <Text style={[styles.stampText, { color: '#34C759' }]}>KEEP</Text>
       </Animated.View>
       <Animated.View style={[styles.stamp, styles.trashStamp, { opacity: trashOpacity }]} pointerEvents="none">
-        <Text style={[styles.stampText, { color: '#FF453A' }]}>ELIMINA</Text>
+        <Text style={[styles.stampText, { color: '#FF453A' }]}>DELETE</Text>
       </Animated.View>
     </Animated.View>
   );
 }
 
-// Carta sotto quella attiva: solo anteprima, niente gesture.
+// Card under the active one: preview only, no gestures.
 export function BackCard({ asset }: { asset: MediaLibrary.Asset }) {
   return (
     <View style={[styles.card, styles.back]} pointerEvents="none">

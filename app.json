@@ -1,7 +1,7 @@
 {
   "expo": {
-    "name": "Cestino",
-    "slug": "CestinoApp",
+    "name": "Bin",
+    "slug": "bin-app",
     "version": "1.0.0",
     "orientation": "portrait",
     "icon": "./assets/icon.png",
@@ -9,10 +9,10 @@
     "backgroundColor": "#0E0E10",
     "ios": {
       "supportsTablet": false,
-      "bundleIdentifier": "com.clackes.cestino"
+      "bundleIdentifier": "com.clackes.bin"
     },
     "android": {
-      "package": "com.clackes.cestino",
+      "package": "com.clackes.bin",
       "adaptiveIcon": {
         "backgroundColor": "#E6F4FE",
         "foregroundImage": "./assets/android-icon-foreground.png",
@@ -28,8 +28,8 @@
       [
         "expo-media-library",
         {
-          "photosPermission": "Cestino deve vedere le tue foto e i tuoi video per farti scegliere cosa tenere e cosa eliminare.",
-          "savePhotosPermission": "Cestino deve poter modificare la libreria per eliminare gli elementi che scarti.",
+          "photosPermission": "Bin needs to see your photos and videos so you can choose what to keep and what to delete.",
+          "savePhotosPermission": "Bin needs to modify your library to delete the items you discard.",
           "granularPermissions": ["photo", "video"]
         }
       ],

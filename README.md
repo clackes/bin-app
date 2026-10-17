@@ -1,20 +1,20 @@
-# Cestino
+# Bin
 
-App iOS personale per fare pulizia nella libreria foto: una foto o un video alla volta, **swipe a destra per tenere, a sinistra per il cestino**, poi un'unica eliminazione confermata dal sistema.
+A personal iOS app for cleaning up your photo library: one photo or video at a time, **swipe right to keep, left to bin**, then a single deletion confirmed by the system.
 
-Gratis, senza App Store e senza abbonamenti: si installa sul proprio iPhone con un Apple ID gratuito (l'app dura 7 giorni, poi si reinstalla).
+Free, no App Store and no subscriptions: install it on your own iPhone with a free Apple ID (the app lasts 7 days, then you reinstall it).
 
 ## Privacy
 
-- Nessun codice di rete: niente server, account o statistiche.
-- Foto e video mostrati senza cache: nessuna copia su disco.
-- Il cestino vive solo in memoria e non viene mai salvato.
-- Sul telefono resta solo l'elenco degli ID degli elementi tenuti, per non riproporli.
+- No networking code: no servers, accounts or analytics.
+- Photos and videos are shown with no cache: no copies on disk.
+- The bin only lives in memory and is never saved.
+- The only thing kept on the phone is the list of IDs of the items you kept, so they are not shown again.
 
 ## Stack
 
-Expo SDK 58 (React Native), `expo-media-library`, `expo-image`, `expo-video`, swipe con `PanResponder` + `Animated`.
+Expo SDK 58 (React Native), `expo-media-library`, `expo-image`, `expo-video`, swiping with `PanResponder` + `Animated`.
 
-## Installazione
+## Installation
 
-Vedi [GUIDA.md](GUIDA.md).
+See [GUIDE.md](GUIDE.md).

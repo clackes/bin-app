@@ -18,17 +18,17 @@ export function orderKey(o: Order) {
 export function orderLabel(o: Order) {
   switch (o.kind) {
     case 'newest':
-      return 'Più recenti prima';
+      return 'Newest first';
     case 'oldest':
-      return 'Più vecchi prima';
+      return 'Oldest first';
     case 'longest':
-      return 'Più lunghi prima';
+      return 'Longest first';
     case 'album':
       return `Album: ${o.title}`;
   }
 }
 
-// Parametri per getAssetsAsync. Dentro un album si va dal più recente.
+// Parameters for getAssetsAsync. Inside an album, newest comes first.
 export function orderQuery(o: Order): Pick<MediaLibrary.AssetsOptions, 'sortBy' | 'album'> {
   switch (o.kind) {
     case 'newest':
@@ -62,7 +62,7 @@ export function OrderPicker({ visible, section, current, onSelect, onClose }: Pr
         setAlbums(
           list
             .filter((a) => a.assetCount > 0)
-            .sort((a, b) => a.title.localeCompare(b.title, 'it')),
+            .sort((a, b) => a.title.localeCompare(b.title)),
         );
       })
       .catch(() => !cancelled && setAlbums([]));
@@ -85,11 +85,11 @@ export function OrderPicker({ visible, section, current, onSelect, onClose }: Pr
     <Modal visible={visible} transparent animationType="slide" onRequestClose={onClose}>
       <Pressable style={styles.backdrop} onPress={onClose} />
       <View style={styles.sheet}>
-        <Text style={styles.heading}>Da dove parto?</Text>
+        <Text style={styles.heading}>Where should I start?</Text>
         {base.map((o) => (
           <Row key={orderKey(o)} label={orderLabel(o)} selected={isCurrent(o)} onPress={() => pick(o)} />
         ))}
-        <Text style={styles.subheading}>Album</Text>
+        <Text style={styles.subheading}>Albums</Text>
         {albums === null ? (
           <ActivityIndicator color="#fff" style={{ marginVertical: 16 }} />
         ) : (
@@ -108,7 +108,7 @@ export function OrderPicker({ visible, section, current, onSelect, onClose }: Pr
                 />
               );
             }}
-            ListEmptyComponent={<Text style={styles.empty}>Nessun album trovato.</Text>}
+            ListEmptyComponent={<Text style={styles.empty}>No albums found.</Text>}
           />
         )}
       </View>

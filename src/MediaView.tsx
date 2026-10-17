@@ -6,7 +6,7 @@ import { Platform, Pressable, StyleSheet, Text, View } from 'react-native';
 
 type Props = {
   asset: MediaLibrary.Asset;
-  // Solo la carta in cima riproduce i video; quella sotto mostra l'anteprima.
+  // Only the top card plays videos; the card underneath shows the still frame.
   active: boolean;
 };
 
@@ -18,8 +18,8 @@ export function MediaView({ asset, active }: Props) {
     if (!isVideo || !active) return;
     let cancelled = false;
     (async () => {
-      // Su Android asset.uri è già un file riproducibile.
-      // Su iOS è "ph://..." e serve chiedere l'URI locale (eventualmente scaricato da iCloud).
+      // On Android asset.uri is already a playable file.
+      // On iOS it is "ph://...", so ask for the local URI (downloaded from iCloud if needed).
       if (Platform.OS === 'android') {
         setVideoUri(asset.uri);
         return;
@@ -28,7 +28,7 @@ export function MediaView({ asset, active }: Props) {
         const info = await MediaLibrary.getAssetInfoAsync(asset, { shouldDownloadFromNetwork: true });
         if (!cancelled && info.localUri) setVideoUri(info.localUri);
       } catch {
-        // Resta l'anteprima statica.
+        // Keep showing the still frame.
       }
     })();
     return () => {
@@ -38,7 +38,7 @@ export function MediaView({ asset, active }: Props) {
 
   return (
     <View style={styles.fill}>
-      {/* Letta dalla libreria e mostrata, senza alcuna cache: niente copie su disco né in memoria dopo lo swipe. */}
+      {/* Read from the library and shown with no cache at all: no copies on disk, nothing kept in memory after the swipe. */}
       <Image
         source={{ uri: asset.uri }}
         style={styles.fill}
@@ -68,7 +68,7 @@ function InlineVideo({ uri }: { uri: string }) {
     <Pressable
       style={StyleSheet.absoluteFill}
       onPress={() => {
-        // Il player è un oggetto nativo imperativo: va modificato direttamente.
+        // The player is an imperative native object, so it is mutated directly.
         // eslint-disable-next-line react-hooks/immutability
         player.muted = !muted;
         setMuted(!muted);
@@ -78,7 +78,7 @@ function InlineVideo({ uri }: { uri: string }) {
         <VideoView player={player} style={styles.fill} contentFit="contain" nativeControls={false} />
       </View>
       <View style={styles.mute} pointerEvents="none">
-        <Text style={styles.badgeText}>{muted ? '🔇 tocca per audio' : '🔊'}</Text>
+        <Text style={styles.badgeText}>{muted ? '🔇 tap for sound' : '🔊'}</Text>
       </View>
     </Pressable>
   );

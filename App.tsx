@@ -5,15 +5,7 @@ import { ActivityIndicator, Alert, Linking, Pressable, StyleSheet, Text, View } 
 import { SafeAreaProvider, SafeAreaView } from 'react-native-safe-area-context';
 import { DEFAULT_ORDER, OrderPicker, orderKey, orderLabel, orderQuery, type Order } from './src/OrderPicker';
 import { BackCard, SwipeCard, type Decision, type SwipeCardHandle } from './src/SwipeCard';
-import {
-  clearAll,
-  dropLegacyKeptIds,
-  loadKeptIds,
-  loadLegacyKeptIds,
-  purgeLegacyTrash,
-  saveKeptIds,
-  type Section,
-} from './src/storage';
+import { clearAll, loadKeptIds, saveKeptIds, type Section } from './src/storage';
 
 type Asset = MediaLibrary.Asset;
 type HistoryEntry = { asset: Asset; decision: Decision };
@@ -42,16 +34,16 @@ function PermissionGate() {
   if (!permission.granted) {
     return (
       <View style={styles.center}>
-        <Text style={styles.title}>Cestino</Text>
+        <Text style={styles.title}>Bin</Text>
         <Text style={styles.body}>
-          Per mostrarti foto e video l'app deve leggere la libreria. Nulla esce dal telefono, nessuna foto viene copiata e di quelle che scarti non resta traccia.
+          To show you your photos and videos, the app needs to read your library. Nothing leaves your phone, nothing is copied, and nothing you discard leaves a trace.
         </Text>
         <Pressable
           style={styles.primaryBtn}
           onPress={() => (permission.canAskAgain ? requestPermission() : Linking.openSettings())}
         >
           <Text style={styles.primaryBtnText}>
-            {permission.canAskAgain ? 'Consenti accesso' : 'Apri Impostazioni'}
+            {permission.canAskAgain ? 'Allow access' : 'Open Settings'}
           </Text>
         </Pressable>
       </View>
@@ -62,8 +54,8 @@ function PermissionGate() {
 }
 
 const SECTIONS: { key: Section; label: string; type: MediaLibrary.MediaTypeValue }[] = [
-  { key: 'photo', label: 'Foto', type: MediaLibrary.MediaType.photo },
-  { key: 'video', label: 'Video', type: MediaLibrary.MediaType.video },
+  { key: 'photo', label: 'Photos', type: MediaLibrary.MediaType.photo },
+  { key: 'video', label: 'Videos', type: MediaLibrary.MediaType.video },
 ];
 
 const sectionOf = (a: Asset): Section => (a.mediaType === MediaLibrary.MediaType.video ? 'video' : 'photo');
@@ -73,7 +65,7 @@ async function countAssets(type: MediaLibrary.MediaTypeValue) {
   return page.totalCount;
 }
 
-// Stato condiviso tra le sezioni: cestino, elementi già tenuti, conteggi.
+// State shared across sections: bin, kept items, counts.
 function Reviewer({ limited }: { limited: boolean }) {
   const [ready, setReady] = useState(false);
   const [section, setSection] = useState<Section>('photo');
@@ -82,9 +74,9 @@ function Reviewer({ limited }: { limited: boolean }) {
   const [trash, setTrash] = useState<Asset[]>([]);
   const [totals, setTotals] = useState<Record<Section, number>>({ photo: 0, video: 0 });
   const [deleting, setDeleting] = useState(false);
-  // Cambiarlo rimonta la coda della sezione (ricarica da capo saltando i già visti).
+  // Changing it remounts the section queue (reloads from the start, skipping reviewed items).
   const [deckKey, setDeckKey] = useState(0);
-  // Gli ID tenuti stanno in un ref (possono essere migliaia); questo forza il ricalcolo dei conteggi.
+  // Kept IDs live in a ref (there can be thousands); this forces the counts to recompute.
   const [, setKeptVersion] = useState(0);
 
   const kept = useRef<Record<Section, Set<string>>>({ photo: new Set(), video: new Set() });
@@ -98,33 +90,17 @@ function Reviewer({ limited }: { limited: boolean }) {
       const [photo, video] = await Promise.all(SECTIONS.map((s) => countAssets(s.type)));
       setTotals({ photo, video });
     } catch {
-      // I conteggi sono solo informativi.
+      // Counts are informational only.
     }
   }, []);
 
-  // Avvio: recupera gli ID degli elementi tenuti. Il cestino parte sempre vuoto.
+  // Startup: load the IDs of kept items. The bin always starts empty.
   useEffect(() => {
     (async () => {
       kept.current = {
         photo: new Set(await loadKeptIds('photo')),
         video: new Set(await loadKeptIds('video')),
       };
-      // Migra la lista unica della prima versione nelle due sezioni.
-      const legacy = await loadLegacyKeptIds();
-      if (legacy.length > 0) {
-        for (const id of legacy) {
-          try {
-            const info = await MediaLibrary.getAssetInfoAsync(id, { shouldDownloadFromNetwork: false });
-            kept.current[sectionOf(info)].add(id);
-          } catch {
-            // Elemento non più esistente.
-          }
-        }
-        await saveKeptIds('photo', kept.current.photo);
-        await saveKeptIds('video', kept.current.video);
-        await dropLegacyKeptIds();
-      }
-      await purgeLegacyTrash();
       await refreshTotals();
       setReady(true);
     })();
@@ -151,19 +127,19 @@ function Reviewer({ limited }: { limited: boolean }) {
     const photos = trash.filter((a) => sectionOf(a) === 'photo').length;
     const videos = trash.length - photos;
     Alert.alert(
-      `Eliminare ${trash.length} elementi?`,
-      `${photos} foto e ${videos} video. Il telefono ti chiederà conferma. Su iPhone finiscono in "Eliminati di recente" per 30 giorni.\n\n"Rimetti in coda" svuota il cestino senza eliminare nulla.`,
+      `Delete ${trash.length} ${trash.length === 1 ? 'item' : 'items'}?`,
+      `${photos} ${photos === 1 ? 'photo' : 'photos'} and ${videos} ${videos === 1 ? 'video' : 'videos'}. Your phone will ask you to confirm. On iPhone they stay in "Recently Deleted" for 30 days.\n\n"Put back" empties the bin without deleting anything.`,
       [
         {
-          text: 'Rimetti in coda',
+          text: 'Put back',
           onPress: () => {
             setTrash([]);
             setDeckKey((k) => k + 1);
           },
         },
-        { text: 'Annulla', style: 'cancel' },
+        { text: 'Cancel', style: 'cancel' },
         {
-          text: 'Elimina',
+          text: 'Delete',
           style: 'destructive',
           onPress: async () => {
             setDeleting(true);
@@ -175,8 +151,8 @@ function Reviewer({ limited }: { limited: boolean }) {
                 refreshTotals();
               }
             } catch (e) {
-              // L'utente ha negato la conferma di sistema, o errore: il cestino resta com'è.
-              Alert.alert('Non eliminato', String(e));
+              // The user declined the system prompt, or an error occurred: the bin stays as it is.
+              Alert.alert('Not deleted', String(e));
             } finally {
               setDeleting(false);
             }
@@ -187,10 +163,10 @@ function Reviewer({ limited }: { limited: boolean }) {
   };
 
   const resetAll = () => {
-    Alert.alert('Ricominciare da capo?', 'Dimentica cosa hai già tenuto: rivedrai tutto. Non elimina nulla.', [
-      { text: 'Annulla', style: 'cancel' },
+    Alert.alert('Start over?', 'Forgets what you have already kept, so you will see everything again. Nothing is deleted.', [
+      { text: 'Cancel', style: 'cancel' },
       {
-        text: 'Ricomincia',
+        text: 'Start over',
         style: 'destructive',
         onPress: async () => {
           await clearAll();
@@ -215,7 +191,7 @@ function Reviewer({ limited }: { limited: boolean }) {
           </Pressable>
         </View>
         <Pressable style={styles.headerCenter} onLongPress={resetAll}>
-          <Text style={styles.headerTitle}>Cestino</Text>
+          <Text style={styles.headerTitle}>Bin</Text>
         </Pressable>
         <View style={[styles.headerSide, styles.headerRight]}>
           <Pressable style={[styles.trashBtn, trash.length === 0 && styles.dimBg]} onPress={emptyTrash}>
@@ -239,7 +215,7 @@ function Reviewer({ limited }: { limited: boolean }) {
             >
               <Text style={[styles.tabText, active && styles.tabTextActive]}>{s.label}</Text>
               <Text style={[styles.tabCount, active && styles.tabTextActive]}>
-                {ready ? `${remaining(s.key)} da vedere` : ' '}
+                {ready ? `${remaining(s.key)} to review` : ' '}
               </Text>
             </Pressable>
           );
@@ -263,8 +239,7 @@ function Reviewer({ limited }: { limited: boolean }) {
       {limited ? (
         <Pressable onPress={() => MediaLibrary.presentPermissionsPickerAsync()}>
           <Text style={styles.banner}>
-            Accesso limitato: vedi solo alcuni elementi. Tocca per sceglierne altri, o dai accesso completo da
-            Impostazioni.
+            Limited access: you only see some items. Tap to pick more, or grant full access in Settings.
           </Text>
         </Pressable>
       ) : null}
@@ -297,7 +272,7 @@ type DeckProps = {
   removeFromTrash: (a: Asset) => void;
 };
 
-// Coda di una sola sezione. Viene rimontata (key) quando cambi sezione.
+// Queue for a single section. Remounted (key) when the section or order changes.
 function Deck({ section, order, trashCount, isReviewed, setKept, addToTrash, removeFromTrash }: DeckProps) {
   const [queue, setQueue] = useState<Asset[]>([]);
   const [history, setHistory] = useState<HistoryEntry[]>([]);
@@ -316,7 +291,7 @@ function Deck({ section, order, trashCount, isReviewed, setKept, addToTrash, rem
     setLoading(true);
     try {
       const fresh: Asset[] = [];
-      // Salta le pagine già viste finché non trova qualcosa di nuovo.
+      // Skip already-reviewed pages until something new turns up.
       while (hasMoreRef.current && fresh.length < 20) {
         const page = await MediaLibrary.getAssetsAsync({
           first: PAGE_SIZE,
@@ -335,7 +310,7 @@ function Deck({ section, order, trashCount, isReviewed, setKept, addToTrash, rem
         return [...q, ...fresh.filter((a) => !seen.has(a.id))];
       });
     } catch (e) {
-      Alert.alert('Errore', `Non riesco a leggere la libreria: ${String(e)}`);
+      Alert.alert('Error', `Could not read the library: ${String(e)}`);
     } finally {
       setHasMore(hasMoreRef.current);
       loadingRef.current = false;
@@ -366,19 +341,19 @@ function Deck({ section, order, trashCount, isReviewed, setKept, addToTrash, rem
   const top = queue[0];
   const next = queue[1];
   const finished = !loading && !hasMore && queue.length === 0;
-  const noun = section === 'photo' ? 'foto' : 'video';
+  const noun = section === 'photo' ? 'photos' : 'videos';
 
   return (
     <>
       <View style={styles.deck}>
         {finished ? (
           <View style={styles.center}>
-            <Text style={styles.title}>Finito! 🎉</Text>
+            <Text style={styles.title}>All done! 🎉</Text>
             <Text style={styles.body}>
               {order.kind === 'album'
-                ? `Non ci sono altri ${noun} da rivedere in "${order.title}".`
-                : `Non ci sono altri ${noun} da rivedere.`}
-              {trashCount > 0 ? `\nHai ${trashCount} elementi nel cestino: tocca 🗑 in alto per eliminarli.` : ''}
+                ? `No more ${noun} to review in "${order.title}".`
+                : `No more ${noun} to review.`}
+              {trashCount > 0 ? `\nYou have ${trashCount} ${trashCount === 1 ? 'item' : 'items'} in the bin: tap 🗑 at the top to delete them.` : ''}
             </Text>
           </View>
         ) : !top ? (
@@ -418,23 +393,23 @@ function Deck({ section, order, trashCount, isReviewed, setKept, addToTrash, rem
 
 function showPrivacy() {
   Alert.alert(
-    'Le tue foto restano tue',
+    'Your photos stay yours',
     [
-      '• Nessuna connessione: l\'app non ha codice di rete, niente server, account o statistiche.',
-      '• Le foto vengono mostrate leggendole dalla libreria, senza copie né cache su disco.',
-      '• Il cestino vive solo in memoria: non viene mai scritto da nessuna parte. Se chiudi l\'app si svuota senza eliminare nulla.',
-      '• L\'unica cosa salvata sul telefono è l\'elenco degli ID (codici tipo "ph://…") delle foto che hai deciso di tenere, per non riproportele. Tieni premuto "Cestino" per cancellarlo.',
+      '• No connection: the app has no networking code. No servers, accounts or analytics.',
+      '• Photos are shown straight from your library, with no copies and no cache.',
+      '• The bin only lives in memory and is never written anywhere. If you close the app it empties without deleting anything.',
+      '• The only thing saved on your phone is the list of IDs (codes like "ph://…") of the items you chose to keep, so they are not shown again. Long-press "Bin" to clear it.',
     ].join('\n\n'),
   );
 }
 
 function describe(a: Asset) {
-  const date = new Date(a.creationTime).toLocaleDateString('it-IT', {
+  const date = new Date(a.creationTime).toLocaleDateString('en-GB', {
     day: 'numeric',
     month: 'long',
     year: 'numeric',
   });
-  return a.mediaType === MediaLibrary.MediaType.video ? `Video · ${date}` : `Foto · ${date}`;
+  return a.mediaType === MediaLibrary.MediaType.video ? `Video · ${date}` : `Photo · ${date}`;
 }
 
 const styles = StyleSheet.create({
